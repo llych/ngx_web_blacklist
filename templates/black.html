@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Nginx 在线增加阻挡IP</title>
+<!-- 此文件为了显示Demo样式，项目中不需要引入 -->
+<!-- <link href="../../assets/code/demo.css" rel="stylesheet"> -->
+ 
+  <link href="http://g.alicdn.com/bui/bui/1.1.21/css/bs3/dpl.css" rel="stylesheet">
+  <link href="http://g.alicdn.com/bui/bui/1.1.21/css/bs3/bui.css" rel="stylesheet">
+ 
+</head>
+<body>
+  <div class="demo-content">
+    
+
+    <div class="row">
+      <div class="span16  offset6">
+         <ul class="nav-tabs">
+         {% if postUri == "?blacklist" then %}
+          <li ><a href="{*uri*}">可增加IP列表</a></li>
+          <li class="active"><a href="{*uri*}?blacklist">已阻挡IP列表</a></li>
+          {% end %}
+         {% if postUri == nil then %}
+          <li class="active"><a href="{*uri*}">可增加IP列表</a></li>
+          <li><a href="{*uri*}?blacklist">已阻挡IP列表</a></li>
+          {% end %}
+        </ul>
+        <div id="grid">
+          
+        </div>
+      </div>
+    </div>
+    <!-- 初始隐藏 dialog内容 -->
+    <div id="content" class="hide">
+      <form class="form-horizontal">
+        <div class="row">
+          <div class="control-group span8">
+            <label class="control-label"><s>*</s>IP:</label>
+            <div class="controls">
+              <input name="ip" type="text" data-rules="{required:true}" class="input-normal control-text">
+            </div>
+          </div>
+        </div> 
+        <div class="row">
+          <div class="control-group span8">
+            <label class="control-label"><s>*</s>地区:</label>
+            <div class="controls">
+              <input name="addr" type="text" data-rules="{required:true}" class="input-normal control-text">
+            </div>
+          </div>
+        </div>  
+        <div class="row">
+          <div class="control-group span8 ">
+            <label class="control-label">超时:</label>
+            <div id="range" class="controls">
+              <input name="time" class="input-normal control-text" data-rules="{required:true,number : true}" type="text">
+            </div>
+          </div>
+<!--           <div class="control-group span8">
+            <label class="control-label">选择：</label>
+            <div class="controls">
+              <select name="c" class="input-normal"> 
+                <option value="">请选择</option>
+                <option value="1">选项一</option>
+                <option value="2">选项二</option>
+              </select>
+            </div>
+          </div> -->
+       
+        </div>
+<!--         <div class="row">
+          <div class="control-group span10">
+            <label class="control-label">多选：</label>
+            <div class="controls bui-form-field-select" data-select="{multipleSelect:true,items : [{text:'选项一',value:'1'},{text:'选项二',value:'2'},{text:'选项三',value:'3'}]}">
+              <input type="hidden" name="e">
+            </div>
+          </div>
+        </div> -->
+<!--         <div class="row">
+          <div class="control-group span10">
+            <label class="control-label">备注：</label>
+            <div class="controls control-row4">
+              <textarea name="f" class="input-large" type="text"></textarea>
+            </div>
+          </div>
+        </div> -->
+      </form>
+    </div>
+    
+ 
+  <script src="http://g.tbcdn.cn/fi/bui/jquery-1.8.1.min.js"></script>
+  <script src="http://g.alicdn.com/bui/seajs/2.3.0/sea.js"></script>
+  <script src="http://g.alicdn.com/bui/bui/1.1.21/config.js"></script>
+ 
+<!-- script start --> 
+    <script type="text/javascript">
+        var pathName=window.document.location.pathname;
+
+        BUI.use(['bui/grid','bui/data'],function(Grid,Data){
+            var Grid = Grid,
+          Store = Data.Store,
+          enumObj = {"1" : "选项一","2" : "选项二","3" : "选项三"},
+          columns = [
+            {title : 'ip',dataIndex :'ip'},
+            {title : '地区',dataIndex :'addr'}, //editor中的定义等用于 BUI.Form.Field.Text的定义
+            {title : '超时', dataIndex :'time'},
+            // {title : '日期',dataIndex :'c'},
+            // {title : '单选',dataIndex : 'd',renderer : Grid.Format.enumRenderer(enumObj)},
+            // {title : '多选',dataIndex : 'e',renderer : Grid.Format.multipleItemsRenderer(enumObj)},
+            {title : '操作',renderer : function(){
+              return '<span class="grid-command btn-edit">编辑</span>'
+            }}
+          ];
+ 
+        var 
+          editing = new Grid.Plugins.DialogEditing({
+            contentId : 'content', //设置隐藏的Dialog内容
+            triggerCls : 'btn-edit', //触发显示Dialog的样式
+            editor: {
+              title: '编辑'
+            },
+            autoSave : true //自动添加和更新
+          }),
+          store = new Store({
+            autoLoad:true,
+            url : pathName + "{*postUri*}",
+            //autoSync : true, //保存数据后自动调用store.load()方法
+            proxy : {
+              method : 'POST', //更改为POST
+              save : pathName + "{*postUri*}" //会附加一个saveType 的参数，add,remove,update
+              //也可以使用一下方式：
+              //save : {
+              //  addUrl : 'data/add.php',
+              //  removeUrl : 'data/remove.php',
+              //  updateUrl : 'data/update.php'
+              //}
+            }
+          }),
+          grid = new Grid.Grid({
+            render:'#grid',
+            columns : columns,
+            width : 700,
+            forceFit : true,
+            tbar:{ //添加、删除
+                items : [{
+                  btnCls : 'button button-small',
+                  text : '<i class="icon-plus"></i>添加',
+                  listeners : {
+                    'click' : addFunction
+                  }
+                },
+                {
+                  btnCls : 'button button-small',
+                  text : '<i class="icon-remove"></i>删除',
+                  listeners : {
+                    'click' : delFunction
+                  }
+                }
+                {% if postUri == nil then %}
+                  ,{
+                  btnCls : 'button button-small',
+                  text : '<i class="icon-plus"></i>添加至阻挡列表',
+                  listeners : {
+                    'click' : addBlacklistFunction
+                  }
+                }
+                {% end %}
+                ]
+            },
+            plugins : [editing,Grid.Plugins.CheckSelection],
+            store : store
+          });
+ 
+        grid.render();
+ 
+        //保存成功时的回调函数,其实更好的方式是直接在保存成功后调用store.load()方法，更新所有数据
+        store.on('saved',function (ev) {
+          var type = ev.type, //保存类型，add,remove,update
+            saveData = ev.saveData, //保存的数据
+            data = ev.data; //返回的数据
+ 
+          //TO DO
+          if(type == 'add'){ //新增记录时后台返回id
+            // saveData.ip = data.ip;
+            console.log(data);
+            grid.updateItem(saveData);
+            store.update()
+            BUI.Message.Alert('添加成功！');
+          }else if(type == 'update'){
+            BUI.Message.Alert('更新成功！');
+          }else{
+            BUI.Message.Alert('删除成功！');
+          }
+        });
+        //保存或者读取失败
+        store.on('exception',function (ev) {
+          BUI.Message.Alert(ev.error);
+        });
+ 
+        //添加记录
+        function addFunction(){
+          var newData = {addr : ""};
+          editing.add(newData,'ip'); //添加记录后，直接编辑
+        };
+        //添加阻挡列表
+        function addBlacklistFunction(){
+          $.get("{*uri*}?put", function(result){
+
+              BUI.Message.Alert(result);
+
+            
+          });
+          // var newData = {addr : ""};
+          // editing.add(newData,'ip'); //添加记录后，直接编辑
+        };
+        //删除选中的记录
+        function delFunction(){
+          var selections = grid.getSelection(),
+            ips = BUI.Array.map(selections,function (item) {
+              return item.ip;
+            });
+          store.remove(selections);
+          store.save('remove',{ips : ips.join(',')}); //save的第三个参数是回调函数
+        }          
+      });
+    </script>
+<!-- script end -->
+  </div>
+</body>
+</html>
