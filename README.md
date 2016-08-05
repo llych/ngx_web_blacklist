@@ -36,6 +36,16 @@ nginx web 在线增加 黑名单, 阻止访问
 >​    content_by_lua_file "conf/lua/black.lua";
 >
 >}
+>
+>set $template_location "/templates";
+>
+>set $template_root "conf/templates";
+>
+>location /templates {
+>
+>internal;
+>
+>}
 
 
 

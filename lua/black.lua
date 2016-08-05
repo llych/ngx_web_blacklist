@@ -9,18 +9,8 @@ local shared_ip = ngx.shared.shared_ip
 
 function methods.GET()
 	-- body
-
-	if uri_args.json then
-		local json = require("cjson")
-		local response = {
-		{ip="127.0.0.1",time="本地",addr="100"},
-		{ip="192.168.1.1",time="本地",addr="100"},
-		{ip="192.168.1.2",time="本地",addr="100"},
-		{ip="192.168.1.3",time="本地",addr="100"}
-		}
-		ngx.say(json.encode(response))
-	elseif uri_args.blacklist then
-		template.render("login.html",{uri=ngx.var.uri,postUri="?blacklist"})
+	if uri_args.blacklist then
+		template.render("black.html",{uri=ngx.var.uri,postUri="?blacklist"})
 	elseif uri_args.put then
 		local keys = shared_ip:get_keys()
 		for index, key in pairs(keys) do
@@ -36,7 +26,7 @@ function methods.GET()
 	else
 		
 
-		template.render("login.html",{uri=ngx.var.uri}) 
+		template.render("black.html",{uri=ngx.var.uri}) 
 	end
 	
 
@@ -49,8 +39,6 @@ function methods.POST()
 	ngx.req.read_body()
 	local post_args = ngx.req.get_post_args()
 	if uri_args.blacklist then
-		-- ngx.say("xxx")
-
 		if (post_args.start) then
 		local json = require("cjson")
 		local response = {}
@@ -61,10 +49,7 @@ function methods.POST()
 			if ttl == nil then
 				ttl = 0
 			end
-
 			response[index] = {ip=key,addr=addr,time=ttl}
-			-- ngx.say(key)
-			-- ngx.say(index)
 		end
 			ngx.say(json.encode(response))
 	elseif (post_args.saveType == "add") then
@@ -102,7 +87,7 @@ function methods.POST()
 			end
 			ngx.say(json.encode(response))
 		elseif (post_args.saveType == "add") then
-			local success, err, forcible = shared_ip:add(tostring(post_args.ip),tostring(post_args.addr),0,tonumber(post_args.time))
+			local success, err, forcible = shared_ip:add(tostring(post_args.ip),tostring(post_args.addr),tonumber(post_args.time),tonumber(post_args.time))
 			-- local success, err, forcible = shared_ip:set("a","0",1000)
 			ngx.say("{\"ip\":\""..post_args.ip.."\"}")
 			-- ngx.say("{\"ip\":\"127.0.x\"}")
@@ -124,23 +109,3 @@ end
 local method = ngx.req.get_method()
 
 methods[method]()
-
--- ngx.req.read_body()
--- local args = ngx.req.get_post_args()
-
--- if not args or not args.info then
--- 	ngx.exit(ngx.HTTP_BAD_REQUEST)
--- end
-
--- local client_ip = ngx.var.remote_addr
--- local user_agent = ngx.req.get_headers()['user-agent'] or ''
-
--- local info = ngx.encode_base64(args.info)
-
-
-
-
-
-
-
-
